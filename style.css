@@ -168,11 +168,11 @@
 }
 
 .coffee_price .price_text {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-65%);
+    position: static;
+    transform: none;
     text-align: center;
-    width: 100%;
+    width: 60%;
+    margin-right: auto;
 }
 
 .plus_button {
@@ -267,17 +267,17 @@
 
 
 .size_buttons button {
-    width: 90px; /* Ширина кнопки */
-    height: 90px; /* Высота кнопки (должна быть равна ширине для квадрата) */
+    width: 90px;
+    height: 90px;
     display: flex;
     align-items: center;
     justify-content: center;
     border: 2px solid #FFFFFF;
     background-color: #FFFFFF;
     cursor: pointer;
-    padding: 0; /* Убираем внутренние отступы */
+    padding: 0;
     font-size: 14px;
-    border-radius: 30px; /* Можно добавить скругление углов по желанию */
+    border-radius: 30px;
     transition: all 0.2s ease;
 
     -webkit-box-shadow: 5px 4px 8px 0px rgba(34, 60, 80, 0.2);
@@ -295,7 +295,7 @@
     background-color: #FFFFFF;
     cursor: pointer;
     font-size: 14px;
-    border-radius: 30px; /* Можно добавить скругление углов по желанию */
+    border-radius: 30px;
     transition: all 0.2s ease;
 
     -webkit-box-shadow: 5px 4px 8px 0px rgba(34, 60, 80, 0.2);
