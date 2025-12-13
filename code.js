@@ -370,14 +370,10 @@ const show_all_coffee_cards = () => {
 }
 
 const order_page_by_index = (index) => {
-    console.log("Переход на страницу заказа");
-
     const selectedCoffee = coffee_list[index];
 
     localStorage.setItem('selectedCoffee', JSON.stringify(selectedCoffee));
     localStorage.setItem('selectedCoffeeIndex', index);
-
-    console.log("Выбран кофе:", selectedCoffee.name);
 
     window.location.href = "order.html";
 }

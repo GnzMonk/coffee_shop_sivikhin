@@ -69,11 +69,9 @@ function loadSelectedCoffee() {
         selectedCoffee = JSON.parse(coffeeData);
         selectedCoffeeIndex = indexData ? parseInt(indexData) : 0;
 
-        console.log("Загружен кофе:", selectedCoffee);
 
         updateCoffeeUI();
     } else {
-        console.log("Данные кофе не найдены, используется fallback");
         selectedCoffee = {
             name: "Classic Cappuccino",
             description: "A perfect balance of espresso, steamed milk and a thick layer of milk foam",
@@ -126,7 +124,6 @@ function updatePrice() {
 
     priceElement.textContent = `Р${price}`;
 
-    console.log(`Цена обновлена: базовая ${selectedCoffee[current_size] || 0} + доп (${current_extra}: ${modifierPrices.extra[current_extra]}) + молоко (${current_milk}: ${modifierPrices.milk[current_milk]}) * ${quantity} = ${price}`);
 }
 
 function switchSizeButton(selectedSize) {
@@ -320,7 +317,4 @@ document.addEventListener('DOMContentLoaded', function() {
     loadSelectedCoffee();
 
     updateQuantityDisplay();
-
-    console.log("Страница заказа загружена");
-    console.log("Цены модификаторов:", modifierPrices);
 });
