@@ -380,3 +380,201 @@ const order_page_by_index = (index) => {
 
 select_slider()
 show_all_coffee_cards()
+
+function updateOrderCounterOnOtherPages() {
+    const orders = JSON.parse(localStorage.getItem('coffeeOrders') || '[]');
+    const counterElement = document.querySelector(".number_orders");
+    if (counterElement) {
+        counterElement.textContent = orders.length;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', updateOrderCounterOnOtherPages);
+
+const ordersModal = document.getElementById('ordersModal');
+const ordersList = document.getElementById('ordersList');
+const totalPriceElement = document.getElementById('totalPrice');
+const closeModalButton = document.querySelector('.close-modal');
+const checkoutButton = document.querySelector('.checkout-btn');
+
+let isModalOpen = false;
+
+function toggleOrdersModal() {
+    isModalOpen = !isModalOpen;
+
+    if (isModalOpen) {
+        ordersModal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        loadOrdersToModal();
+    } else {
+        ordersModal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+}
+
+
+function loadOrdersToModal() {
+    const orders = getOrdersFromStorage()
+    ordersList.innerHTML = '';
+
+    if (orders.length === 0) {
+        ordersList.innerHTML = `
+            <div class="empty-orders">
+                <p>Your cart is empty</p>
+                <p>Add some coffee to get started!</p>
+            </div>
+        `;
+        checkoutButton.disabled = true;
+        updateTotalPrice(0);
+        return;
+    }
+
+    checkoutButton.disabled = false;
+
+    let totalPrice = 0;
+
+    orders.forEach(order => {
+        totalPrice += order.totalPrice;
+
+        const orderItem = document.createElement('div');
+        orderItem.className = 'order-item';
+        orderItem.dataset.id = order.id;
+
+        orderItem.innerHTML = `
+            <div class="order-item-header">
+                <span class="order-item-name">${order.coffee}</span>
+                <button class="order-item-remove" onclick="removeOrder(${order.id})">
+                    Remove
+                </button>
+            </div>
+            <div class="order-item-details">
+                <div>Size: ${order.size}</div>
+                <div>Extra: ${order.extra}</div>
+                <div>Milk: ${order.milk}</div>
+            </div>
+            <div class="order-item-quantity">
+                <button onclick="decreaseOrderQuantity(${order.id})">-</button>
+                <span>${order.quantity}</span>
+                <button onclick="increaseOrderQuantity(${order.id})">+</button>
+            </div>
+            <div class="order-item-price">
+                Р${order.totalPrice}
+            </div>
+        `;
+
+        ordersList.appendChild(orderItem);
+    });
+
+    updateTotalPrice(totalPrice);
+}
+
+function updateTotalPrice(total) {
+    totalPriceElement.textContent = `Р${total}`;
+}
+
+function removeOrder(orderId) {
+    let orders = getOrdersFromStorage();
+    orders = orders.filter(order => order.id !== orderId);
+
+    saveOrdersToStorage(orders);
+    updateOrderCounter(orders.length);
+    loadOrdersToModal();
+
+    if (orders.length === 0 && isModalOpen) {
+        setTimeout(() => {
+            if (getOrdersFromStorage().length === 0) {
+                ordersModal.classList.remove('active');
+                document.body.style.overflow = '';
+                isModalOpen = false;
+            }
+        }, 100);
+    }
+}
+
+function increaseOrderQuantity(orderId) {
+    let orders = getOrdersFromStorage();
+    const orderIndex = orders.findIndex(order => order.id === orderId);
+
+    if (orderIndex !== -1) {
+        orders[orderIndex].quantity++;
+        const pricePerItem = orders[orderIndex].basePrice +
+                           orders[orderIndex].extraPrice +
+                           orders[orderIndex].milkPrice;
+        orders[orderIndex].totalPrice = pricePerItem * orders[orderIndex].quantity;
+
+        saveOrdersToStorage(orders);
+        loadOrdersToModal();
+    }
+}
+function decreaseOrderQuantity(orderId) {
+    let orders = getOrdersFromStorage();
+    const orderIndex = orders.findIndex(order => order.id === orderId);
+
+    if (orderIndex !== -1) {
+        if (orders[orderIndex].quantity > 1) {
+            orders[orderIndex].quantity--;
+            const pricePerItem = orders[orderIndex].basePrice +
+                               orders[orderIndex].extraPrice +
+                               orders[orderIndex].milkPrice;
+            orders[orderIndex].totalPrice = pricePerItem * orders[orderIndex].quantity;
+
+            saveOrdersToStorage(orders);
+            loadOrdersToModal();
+        } else {
+            if (confirm('Remove this item from cart?')) {
+                removeOrder(orderId);
+            }
+        }
+    }
+}
+
+function checkout() {
+    const orders = getOrdersFromStorage();
+
+    if (orders.length === 0) {
+        alert('Your cart is empty!');
+        return;
+    }
+
+    const totalPrice = orders.reduce((sum, order) => sum + order.totalPrice, 0);
+
+    alert(`Checkout successful!\nTotal: Р${totalPrice}\nThank you for your order!`);
+
+    toggleOrdersModal();
+}
+
+const numberOrdersElement = document.querySelector(".number_orders");
+
+numberOrdersElement.parentElement.addEventListener('click', toggleOrdersModal);
+
+closeModalButton.addEventListener('click', toggleOrdersModal);
+
+ordersModal.querySelector('.modal-overlay').addEventListener('click', toggleOrdersModal);
+
+checkoutButton.addEventListener('click', checkout);
+
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape' && isModalOpen) {
+        toggleOrdersModal();
+    }
+});
+
+
+document.addEventListener('DOMContentLoaded', function() {
+    switchSizeButton(current_size);
+    switchExtraButton(current_extra);
+    switchMilkButton(current_milk);
+
+    loadSelectedCoffee();
+    updateQuantityDisplay();
+    initializeOrderCounter();
+});
+
+function getOrdersFromStorage() {
+    const ordersJSON = localStorage.getItem('coffeeOrders');
+    return ordersJSON ? JSON.parse(ordersJSON) : [];
+}
+
+function saveOrdersToStorage(orders) {
+    localStorage.setItem('coffeeOrders', JSON.stringify(orders));
+}

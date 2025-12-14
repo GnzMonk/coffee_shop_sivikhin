@@ -102,7 +102,7 @@ function updatePrice() {
     }
 
     let price = 0;
-    switch(current_size) {
+    switch (current_size) {
         case sizeType.short:
             price = selectedCoffee.short || 0;
             break;
@@ -132,7 +132,7 @@ function switchSizeButton(selectedSize) {
     });
 
     let selectedButton = null;
-    switch(selectedSize) {
+    switch (selectedSize) {
         case sizeType.short:
             selectedButton = short_button;
             break;
@@ -170,7 +170,7 @@ function switchExtraButton(selectedExtra) {
     });
 
     let selectedButton = null;
-    switch(selectedExtra) {
+    switch (selectedExtra) {
         case extraType.none:
             selectedButton = none_button;
             break;
@@ -208,7 +208,7 @@ function switchMilkButton(selectedMilk) {
     });
 
     let selectedButton = null;
-    switch(selectedMilk) {
+    switch (selectedMilk) {
         case milkType.oat:
             selectedButton = oat_button;
             break;
@@ -276,7 +276,7 @@ backDiv.addEventListener('click', goToIndexPage);
 function getTotalPrice() {
     let price = 0;
 
-    switch(current_size) {
+    switch (current_size) {
         case sizeType.short:
             price = selectedCoffee.short || 0;
             break;
@@ -309,7 +309,7 @@ function getOrderDetails() {
     };
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     switchSizeButton(current_size);
     switchExtraButton(current_extra);
     switchMilkButton(current_milk);
@@ -317,4 +317,247 @@ document.addEventListener('DOMContentLoaded', function() {
     loadSelectedCoffee();
 
     updateQuantityDisplay();
+});
+
+
+const placeOrderButton = document.querySelector(".place_order");
+const numberOrdersElement = document.querySelector(".number_orders");
+
+function initializeOrderCounter() {
+    let orders = getOrdersFromStorage();
+    updateOrderCounter(orders.length);
+}
+
+function getOrdersFromStorage() {
+    const ordersJSON = localStorage.getItem('coffeeOrders');
+    return ordersJSON ? JSON.parse(ordersJSON) : [];
+}
+
+function saveOrdersToStorage(orders) {
+    localStorage.setItem('coffeeOrders', JSON.stringify(orders));
+}
+
+function updateOrderCounter(count) {
+    numberOrdersElement.textContent = count;
+}
+
+function addNewOrder() {
+    const orderDetails = getOrderDetails();
+
+    const newOrder = {
+        id: Date.now(),
+        ...orderDetails,
+        date: new Date().toISOString(),
+        status: "pending"
+    };
+
+    let orders = getOrdersFromStorage();
+
+    orders.push(newOrder);
+
+    saveOrdersToStorage(orders);
+
+    updateOrderCounter(orders.length);
+
+    showOrderConfirmation(newOrder);
+
+    resetSelection();
+}
+
+function showOrderConfirmation(order) {
+    alert(`Заказ успешно добавлен!\n\n${order.quantity}x ${order.coffee} (${order.size})\nСумма: Р${order.totalPrice}\n\nНомер заказа: #${order.id}`);
+}
+
+function resetSelection() {
+    quantity = 1;
+    updateQuantityDisplay();
+    switchSizeButton(sizeType.short);
+    switchExtraButton(extraType.none);
+    switchMilkButton(milkType.oat);
+    updatePrice();
+}
+
+placeOrderButton.addEventListener('click', addNewOrder);
+
+document.addEventListener('DOMContentLoaded', function () {
+
+    initializeOrderCounter();
+});
+
+const ordersModal = document.getElementById('ordersModal');
+const ordersList = document.getElementById('ordersList');
+const totalPriceElement = document.getElementById('totalPrice');
+const closeModalButton = document.querySelector('.close-modal');
+const checkoutButton = document.querySelector('.checkout-btn');
+
+let isModalOpen = false;
+
+function toggleOrdersModal() {
+    isModalOpen = !isModalOpen;
+
+    if (isModalOpen) {
+        ordersModal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        loadOrdersToModal();
+    } else {
+        ordersModal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+}
+
+function loadOrdersToModal() {
+    const orders = getOrdersFromStorage();
+    ordersList.innerHTML = '';
+
+    if (orders.length === 0) {
+        ordersList.innerHTML = `
+            <div class="empty-orders">
+                <p>Your cart is empty</p>
+                <p>Add some coffee to get started!</p>
+            </div>
+        `;
+        checkoutButton.disabled = true;
+        updateTotalPrice(0);
+        return;
+    }
+
+    checkoutButton.disabled = false;
+
+    let totalPrice = 0;
+
+    orders.forEach(order => {
+        totalPrice += order.totalPrice;
+
+        const orderItem = document.createElement('div');
+        orderItem.className = 'order-item';
+        orderItem.dataset.id = order.id;
+
+        orderItem.innerHTML = `
+            <div class="order-item-header">
+                <span class="order-item-name">${order.coffee}</span>
+                <button class="order-item-remove" onclick="removeOrder(${order.id})">
+                    Remove
+                </button>
+            </div>
+            <div class="order-item-details">
+                <div>Size: ${order.size}</div>
+                <div>Extra: ${order.extra}</div>
+                <div>Milk: ${order.milk}</div>
+            </div>
+            <div class="order-item-quantity">
+                <button onclick="decreaseOrderQuantity(${order.id})">-</button>
+                <span>${order.quantity}</span>
+                <button onclick="increaseOrderQuantity(${order.id})">+</button>
+            </div>
+            <div class="order-item-price">
+                Р${order.totalPrice}
+            </div>
+        `;
+
+        ordersList.appendChild(orderItem);
+    });
+
+    updateTotalPrice(totalPrice);
+}
+
+function updateTotalPrice(total) {
+    totalPriceElement.textContent = `Р${total}`;
+}
+
+function removeOrder(orderId) {
+    let orders = getOrdersFromStorage();
+    orders = orders.filter(order => order.id !== orderId);
+
+    saveOrdersToStorage(orders);
+    updateOrderCounter(orders.length);
+    loadOrdersToModal();
+
+    if (orders.length === 0 && isModalOpen) {
+        setTimeout(() => {
+            if (getOrdersFromStorage().length === 0) {
+                ordersModal.classList.remove('active');
+                document.body.style.overflow = '';
+                isModalOpen = false;
+            }
+        }, 100);
+    }
+}
+
+
+function increaseOrderQuantity(orderId) {
+    let orders = getOrdersFromStorage();
+    const orderIndex = orders.findIndex(order => order.id === orderId);
+
+    if (orderIndex !== -1) {
+        orders[orderIndex].quantity++;
+        const pricePerItem = orders[orderIndex].basePrice +
+            orders[orderIndex].extraPrice +
+            orders[orderIndex].milkPrice;
+        orders[orderIndex].totalPrice = pricePerItem * orders[orderIndex].quantity;
+
+        saveOrdersToStorage(orders);
+        loadOrdersToModal();
+    }
+}
+
+function decreaseOrderQuantity(orderId) {
+    let orders = getOrdersFromStorage();
+    const orderIndex = orders.findIndex(order => order.id === orderId);
+
+    if (orderIndex !== -1) {
+        if (orders[orderIndex].quantity > 1) {
+            orders[orderIndex].quantity--;
+            const pricePerItem = orders[orderIndex].basePrice +
+                orders[orderIndex].extraPrice +
+                orders[orderIndex].milkPrice;
+            orders[orderIndex].totalPrice = pricePerItem * orders[orderIndex].quantity;
+
+            saveOrdersToStorage(orders);
+            loadOrdersToModal();
+        } else {
+            if (confirm('Remove this item from cart?')) {
+                removeOrder(orderId);
+            }
+        }
+    }
+}
+
+function checkout() {
+    const orders = getOrdersFromStorage();
+
+    if (orders.length === 0) {
+        alert('Your cart is empty!');
+        return;
+    }
+
+    const totalPrice = orders.reduce((sum, order) => sum + order.totalPrice, 0);
+
+    alert(`Checkout successful!\nTotal: Р${totalPrice}\nThank you for your order!`);
+
+    toggleOrdersModal();
+}
+
+
+numberOrdersElement.parentElement.addEventListener('click', toggleOrdersModal);
+
+closeModalButton.addEventListener('click', toggleOrdersModal);
+
+ordersModal.querySelector('.modal-overlay').addEventListener('click', toggleOrdersModal);
+
+checkoutButton.addEventListener('click', checkout);
+
+document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape' && isModalOpen) {
+        toggleOrdersModal();
+    }
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+    switchSizeButton(current_size);
+    switchExtraButton(current_extra);
+    switchMilkButton(current_milk);
+
+    loadSelectedCoffee();
+    updateQuantityDisplay();
+    initializeOrderCounter();
 });
