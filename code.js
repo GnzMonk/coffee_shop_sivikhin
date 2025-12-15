@@ -276,8 +276,10 @@ const latte_slider = document.querySelector(".latte_slider")
 const americano_slider = document.querySelector(".americ_slider")
 const expresso_slider = document.querySelector(".expresso_slider")
 const flatWhite_slider = document.querySelector(".flat_slider")
+const all_slider = document.querySelector(".all_slider")
 
 const coffeeSliders = [
+    all_slider,
     cappuchinno_slider,
     latte_slider,
     americano_slider,
@@ -361,7 +363,12 @@ const get_coffee_item = (coffee, index) => {
 const show_all_coffee_cards = () => {
     let coffeeHTML = '';
     coffee_list.forEach((item, index) => {
-        if (!type_filter(item)) return
+        if (currentCoffeeIndex == 0) {
+
+        }
+        else {
+            if (!type_filter(item)) return
+        }
         if (!name_filter(item)) return
         const coffee_item = get_coffee_item(item, index)
         coffeeHTML += coffee_item;
